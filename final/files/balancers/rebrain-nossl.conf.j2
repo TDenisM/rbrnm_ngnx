@@ -1,0 +1,18 @@
+server {
+  server_name   {{ a }};
+  listen        0.0.0.0:80;
+
+  location /.well-known/acme-challenge/ {
+    root /opt/www/acme;
+    try_files $uri @proxy;
+  }
+ 
+  location @proxy {
+    {% if inventory_hostname == 'balancer_a' -%}
+    proxy_pass http://{{ hostvars['balancer_b'].ansible_host }};
+    {%- else -%}
+    proxy_pass http://{{ hostvars['balancer_a'].ansible_host }};
+    {%- endif %}
+  }
+
+}

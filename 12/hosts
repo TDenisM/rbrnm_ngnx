@@ -1,0 +1,9 @@
+[servers]
+#server1 ansible_host=192.168.33.10 ansible_user=vagrant
+#server2 ansible_host=192.168.33.11 ansible_user=vagrant
+#server3 ansible_host=192.168.33.12 ansible_user=vagrant
+#server4 ansible_host=192.168.33.13 ansible_user=vagrant
+
+server1 ansible_host=138.68.103.171 ansible_user=user 
+#ansible_ssh_pass=bqgibunztvdk
+#server2 ansible_host=159.89.104.209 ansible_user=user ansible_ssh_pass=ygwxyowzhxer

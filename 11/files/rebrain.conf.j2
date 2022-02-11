@@ -1,0 +1,20 @@
+map $geoip_country_code $blocked {
+    default 1;
+    RU 0;
+    UA 0;
+    US 0;
+}
+
+server {
+    server_name   {{ a }};
+    listen        0.0.0.0:80;
+
+    if ($blocked) {
+        return 403;
+    }
+
+    location / {
+        index index.html;
+        alias /usr/share/nginx/html/;
+    }
+}

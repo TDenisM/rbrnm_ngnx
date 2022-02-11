@@ -1,0 +1,46 @@
+---
+# curl -D - -s -o /dev/null 
+- name: check for ssh
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: check ssh state
+      wait_for:
+        port: 22
+        host: '{{ ansible_host }}'
+        search_regex: OpenSSH
+        delay: 5
+      connection: local
+
+- name: nginx install prerequirements
+  hosts: all
+  become: yes
+  vars:
+    a: "country.835f5a37455a1351756d6581c0a563ef.kis.im"
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: yes
+        pkg:
+        - nginx
+        - libnginx-mod-http-geoip
+        - geoip-database
+        - curl
+    - name: delete default
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+    - name: edit nginx.conf
+      lineinfile:
+        path: /etc/nginx/nginx.conf
+        line: "\tgeoip_country /usr/share/GeoIP/GeoIP.dat;"
+        insertbefore: "sendfile on;"
+        state: present
+    - name: copy config
+      template:
+        src: files/rebrain.conf.j2
+        dest: /etc/nginx/sites-enabled/rebrain.conf
+    - name: restat nginx
+      service:
+        name: nginx
+        state: restarted

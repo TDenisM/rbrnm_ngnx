@@ -1,0 +1,9 @@
+server {
+  server_name   {{ a }};
+  listen        0.0.0.0:80;
+
+  location /.well-known/acme-challenge/ {
+    root /opt/www/acme;
+  }
+
+}

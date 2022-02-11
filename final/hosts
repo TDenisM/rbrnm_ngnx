@@ -1,0 +1,13 @@
+[balancers]
+#balancer_a ansible_host=192.168.33.10 ansible_user=vagrant name=a
+#balancer_b ansible_host=192.168.33.11 ansible_user=vagrant name=b
+balancer_a ansible_host=164.92.240.106 ansible_user=user
+balancer_b ansible_host=46.101.178.86 ansible_user=user
+
+[applications]
+app_a ansible_host=164.92.240.50 ansible_user=user
+app_b ansible_host=159.89.31.197 ansible_user=user
+
+#server1 ansible_host=164.92.245.62 ansible_user=user 
+#ansible_ssh_pass=bqgibunztvdk
+#server2 ansible_host=159.89.104.209 ansible_user=user ansible_ssh_pass=ygwxyowzhxer

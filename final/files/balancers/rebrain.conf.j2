@@ -1,0 +1,50 @@
+log_format format '$request $request_time $upstream_response_time';
+
+server {
+  server_name   {{ a }};
+  listen        0.0.0.0:80;
+
+  location /.well-known/acme-challenge/ {
+    root /opt/www/acme;
+    try_files $uri @proxy;
+  }
+
+  # Left for the future cert update purposes
+  location @proxy {
+    {% if inventory_hostname == 'balancer_a' -%}
+    proxy_pass http://{{ hostvars['balancer_b'].ansible_host }};
+    {%- else -%}
+    proxy_pass http://{{ hostvars['balancer_a'].ansible_host }};
+    {%- endif %}
+  }
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+}
+
+upstream backend {
+  server {{ hostvars['app_a'].ansible_host }}:80;
+  server {{ hostvars['app_b'].ansible_host }}:80;
+
+  check interval=1000 rise=1 fall=3 timeout=1000 type=http;
+  check_http_send "GET /helth HTTP/1.0\r\n\r\n";
+  check_http_expect_alive http_2xx;
+}
+
+server {
+  server_name {{ a }};
+  listen 0.0.0.0:443 ssl;
+  ssl_certificate /etc/letsencrypt/live/{{ a }}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/{{ a }}/privkey.pem;
+
+  location /app {
+    access_log /var/log/nginx/access-app.log format;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_pass http://backend;
+  }
+
+  location /metrics {
+    proxy_pass http://127.0.0.1:4040;
+  }
+}

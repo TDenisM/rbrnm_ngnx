@@ -1,0 +1,24 @@
+server {
+    server_name   {{ a }};
+    listen        0.0.0.0:80;
+
+    location	^~ /admin/ {
+       return	403;
+    }
+
+    location	= /admin/readme.md {
+       return	200;
+    }
+
+    location	~* \.(jpg|png) {
+	return	202;
+    }
+
+    location	~ \.TXT {
+	return	204;
+    }
+
+    location	~ \.txt {
+	return	404;
+    }
+}

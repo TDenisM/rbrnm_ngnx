@@ -1,0 +1,14 @@
+server {
+    server_name   {{ a }};
+    listen        0.0.0.0:80;
+    
+    location /country {
+      add_header X-Country $geoip_country_code3;
+      return 200;
+    }
+
+    location /name {
+      add_header X-Country-Name $geoip_country_name;
+      return 200;
+    }
+}

@@ -1,0 +1,151 @@
+---
+- name: check for ssh
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: check ssh state
+      wait_for:
+        port: 22
+        host: '{{ ansible_host }}'
+        search_regex: OpenSSH
+        delay: 5
+      connection: local
+
+- name: BALANCERS
+  hosts: balancers
+  become: yes
+  vars:
+    a: "app.bb68698ddb410b2db3170037d25dac51.kis.im"
+  tasks:
+    - name: enable sources
+      shell: sed -i 's/# deb-src/deb-src/g' /etc/apt/sources.list
+    - name: apt update
+      apt:
+        update_cache: yes
+        pkg:
+        - nginx
+        state: build-dep
+    - name: install requirements
+      apt:
+        pkg:
+        - curl
+        - gcc
+        - fakeroot
+        - letsencrypt
+    - name: get sources
+      shell: apt-get source nginx
+      args:
+        chdir: /opt
+    - name: clone nginx_upstream_check_module repo
+      git:
+        repo: https://github.com/yaoweibin/nginx_upstream_check_module
+        dest: /opt/nginx_upstream_check_module
+        clone: yes
+        update: yes
+    - name: patch
+      patch:
+        src: /opt/nginx_upstream_check_module/check_1.16.1+.patch
+        basedir: /opt/nginx-1.18.0
+        strip: 1
+        remote_src: yes  
+    - name: copy rules
+      copy:
+        src: files/balancers/rules
+        dest: /opt/nginx-1.18.0/debian/rules
+    - name: build
+      shell:
+        cmd: dpkg-buildpackage -b --no-sign
+        chdir: /opt/nginx-1.18.0
+        creates: /opt/nginx-common_1.18.0-0ubuntu1.2_all.deb
+    - name: install common
+      shell:
+        cmd: dpkg -i /opt/nginx-common_1.18.0-0ubuntu1.2_all.deb
+    - name:  install mods
+      shell:
+        cmd: dpkg -i /opt/libnginx-mod-*
+    - name: install core
+      shell:
+        cmd: dpkg -i /opt/nginx-core_1.18.0-0ubuntu1.2_amd64.deb
+    - name: delete default
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+    - name: create www acme folder
+      file:
+        path: /opt/www/acme/.well-known/acme-challenge
+        state: directory
+        recurse: yes
+    - name: copy config
+      template:
+        src: files/balancers/rebrain-nossl.conf.j2
+        dest: /etc/nginx/sites-enabled/rebrain.conf
+    - name: restat nginx
+      service:
+        name: nginx
+        state: restarted
+    - name: exec letsencrypt
+      command: letsencrypt certonly --non-interactive --agree-tos -m webmaster@mail.ru --webroot -w /opt/www/acme/ -d {{ a }}
+    - name: copy config
+      template:
+        src: files/balancers/rebrain.conf.j2
+        dest: /etc/nginx/sites-enabled/rebrain.conf
+    - name: restat nginx
+      service:
+        name: nginx
+        state: restarted
+    - name: download exporter
+      uri:
+        url: https://github.com/martin-helmich/prometheus-nginxlog-exporter/releases/download/v1.8.0/prometheus-nginxlog-exporter_1.8.0_linux_amd64.deb
+        dest: ./prometheus-nginxlog-exporter_1.8.0_linux_amd64.deb
+        creates: ./prometheus-nginxlog-exporter_1.8.0_linux_amd64.deb
+    - name: install exporter
+      apt:
+        deb: ./prometheus-nginxlog-exporter_1.8.0_linux_amd64.deb
+    - name: copy exporter config
+      template:
+        src: files/balancers/nginx_exporter_config.hcl.j2
+        dest: /etc/prometheus-nginxlog-exporter.hcl
+    - name: start exporter service
+      service:
+        name: prometheus-nginxlog-exporter
+        state: restarted
+
+
+# requirements: ansible-galaxy install geerlingguy.docker    
+- name: APPLICATIONS
+  hosts: applications
+  become: yes
+  vars:
+    a: ""
+    b: ""
+  roles:
+    - geerlingguy.docker
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: yes
+        pkg:
+        - nginx
+        - curl
+        - python3-pip
+    - name: install pip chackages
+      pip:
+        name: docker-py
+    - name: delete default
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+    - name: copy config
+      template:
+        src: files/applications/rebrain.conf.j2
+        dest: /etc/nginx/sites-enabled/rebrain.conf
+    - name: restat nginx
+      service:
+        name: nginx
+        state: restarted
+    - name: run app image
+      docker_container:
+        image: traefik/whoami
+        name: whoami
+        ports:
+          - "8080:80"

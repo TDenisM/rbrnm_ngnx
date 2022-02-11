@@ -1,0 +1,14 @@
+log_format themain '$remote_addr $status $request_time $upstream_response_time';
+
+error_log /dev/null;
+access_log /var/log/nginx/log.access.log themain;
+
+server {
+    server_name   {{ a }};
+    listen        0.0.0.0:80;
+
+    location /rebrain {
+        proxy_pass https://rebrainme.com/;
+	proxy_ssl_server_name on;
+    }
+}

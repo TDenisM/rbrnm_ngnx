@@ -1,0 +1,26 @@
+server {
+    server_name   {{ a }};
+    listen        0.0.0.0:80;
+
+    location      / {
+       return	201 "ALPHA";
+    }
+}
+
+server {
+    server_name   {{ b }};
+    listen        0.0.0.0:80 default_server;
+
+    location      / {
+       return   202 "BETA";
+    }
+}
+
+server {
+    server_name   {{ c }};
+    listen        0.0.0.0:8080;
+
+    location      / {
+       return   301 "https://rebrainme.com";
+    }
+}

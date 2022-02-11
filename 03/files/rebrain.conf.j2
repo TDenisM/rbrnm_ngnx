@@ -1,0 +1,14 @@
+server {
+  server_name   {{ a }};
+  listen        0.0.0.0:80;
+
+  location / {
+    root        /opt/www/{{ a }}/;
+    try_files   $uri =204;
+  }
+
+  location /heya.html {
+    root        /tmp;
+    rewrite ^(.*)$ /test3.html break;
+  }
+}

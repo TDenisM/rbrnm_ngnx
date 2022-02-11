@@ -1,0 +1,24 @@
+server {
+  server_name   {{ a }};
+  listen        0.0.0.0:80;
+
+  location /.well-known/acme-challange/ {
+    root /opt/www/acme;
+  }
+
+  location / {
+    return 301 "https://{{ a }}";
+  }
+}
+
+server {
+  server_name	{{ a }};
+  listen 443 ssl;
+  ssl_certificate /etc/letsencrypt/live/{{ a }}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/{{ a }}/privkey.pem;
+  ssl_protocols TLSv1.3;
+
+  location / {
+    return 201;
+  }
+}

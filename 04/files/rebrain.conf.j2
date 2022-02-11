@@ -1,0 +1,16 @@
+server {
+  server_name   {{ a }};
+  listen        0.0.0.0:80;
+
+  location /admin {
+    rewrite ^/admin/(.*)$ /adminochka/$1 permanent;
+  }
+
+  location /user {
+    rewrite ^/user(.*)$ /index.php?user=$1? last;
+  }
+
+  location = /index.php {
+    return 200;
+  }
+}

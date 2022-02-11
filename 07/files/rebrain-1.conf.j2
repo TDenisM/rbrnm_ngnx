@@ -1,0 +1,22 @@
+server {
+  server_name   {{ a }};
+  listen        0.0.0.0:80;
+
+  location /.well-known/acme-challange/ {
+    root /opt/www/acme;
+  }
+}
+
+server {
+  server_name {{ a }};
+  listen 0.0.0.0:443 ssl;
+  ssl_certificate /etc/letsencrypt/live/{{ a }}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/{{ a }}/privkey.pem;
+  ssl_protocols TLSv1.3;
+  ssl_client_certificate /etc/nginx/ssl/ca.crt;
+  ssl_verify_client on;
+
+  location / {
+    root /usr/share/nginx/html/;
+  }
+}

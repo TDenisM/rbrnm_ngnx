@@ -1,0 +1,19 @@
+server {
+    server_name   {{ a }};
+    listen        0.0.0.0:80;
+
+    if ($http_origin = 'https://example.org/') {
+        set $test A;
+    }
+
+    if ($request_method = 'GET') {
+        set $test "${test}B";
+    }
+
+    location / {
+        if ($test = 'AB') {
+            add_header Access-Control-Allow-Origin https://example.org/ always;
+        }
+        return 200;
+    }
+}
